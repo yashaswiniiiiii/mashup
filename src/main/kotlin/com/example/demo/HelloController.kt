@@ -17,26 +17,25 @@ import org.slf4j.Logger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.support.SqlValue
 import org.springframework.validation.BindingResult
+import com.example.demo.producer.Publisher
 
 @RestController
 @RequestMapping("/users")
 class UserController @Autowired constructor(val userRepository: UserRepository) {
+  @Autowired
+  private lateinit var publisher:Publisher
    private val logger: Logger= LoggerFactory.getLogger(UserController:: class.java)
-
+   private
     @PostMapping
     fun createUser(@Valid @RequestBody newUser: User): ResponseEntity<User> {
      logger.info("Creating new User with Id ${newUser.id}")
         val validationErrors=mutableListOf<String>()
 
-        if(newUser.id == null){
-            validationErrors.add("User ID must be not Null")
+        if(newUser.id == null || newUser.name.isNullOrBlank()|| newUser.address.isNullOrBlank()){
+            validationErrors.add("Provide all information")
+            publisher.publishMessage("Provide all information")
         }
-        if(newUser.name.isNullOrBlank()){
-            validationErrors.add("User name must be not Null")
-        }
-        if(newUser.address.isNullOrBlank()){
-            validationErrors.add("User address must be not Null")
-        }
+
 
         newUser.id?.let {
             if (newUser.id !is Long || it <= 0) {
@@ -45,6 +44,7 @@ class UserController @Autowired constructor(val userRepository: UserRepository) 
         }
         newUser.age?.let {
             if (it <= 0) {
+                publisher.publishMessage("The user with ${newUser.id} must have age greater than zero")
                 throw BadRequestException(400,"User Age must be greater than zero.")
             }
         }
@@ -56,6 +56,7 @@ class UserController @Autowired constructor(val userRepository: UserRepository) 
 //        }
         val existingUser = userRepository.findById(newUser.id ?: -1).orElse(null)
         if (existingUser != null) {
+            publisher.publishMessage("The user with ID ${newUser.id} already exists")
             throw conflictException(409, "A user with ID ${newUser.id} already exists.")
         }
 //        userRepository.findById(newUser.id ?: -1).ifPresent {
@@ -63,6 +64,7 @@ class UserController @Autowired constructor(val userRepository: UserRepository) 
 //        }
         val savedUser = userRepository.save(newUser)
         logger.info("new user with id {newUser.id} has been created")
+       publisher.publishMessage("The user with ${newUser.id} has been created")
         return ResponseEntity.status(HttpStatus.CREATED).body(savedUser)
     }
 
@@ -73,7 +75,8 @@ class UserController @Autowired constructor(val userRepository: UserRepository) 
     fun listUsers(): List<User> {
         val users:List<User>
         users=userRepository.findAll()
-        logger.info("Fetching details")
+        logger.info("Fetching all user details")
+        publisher.publishMessage("Fetching all user details")
         return users
     }
 
@@ -85,23 +88,29 @@ class UserController @Autowired constructor(val userRepository: UserRepository) 
     @GetMapping("/{id}")
     fun getUser(@PathVariable id: Long): ResponseEntity<User> {
         logger.info("getting details of user having id${id}")
+        publisher.publishMessage("fetching details of user having id ${id}")
         val user = userRepository.findById(id).orElseThrow {
-
+            publisher.publishMessage("The user with ${id} not found")
             UserNotFoundExceptionn(404, "User with id $id not found")
         }
         logger.info("details of user having id${id} is fetched")
+        publisher.publishMessage("details  of user having id ${id} is fetched")
         return ResponseEntity.ok(user)
     }
 
     @DeleteMapping("/{id}")
     fun deleteUser(@PathVariable id: Long): ResponseEntity<Void> {
         logger.info("Deleting user having id${id}")
+        publisher.publishMessage("Deleting user having id ${id}")
         return userRepository.findById(id).map { user ->
             userRepository.delete(user)
             logger.info("User with Id ${id} deleted successfully")
+            publisher.publishMessage("User with id ${id} deleted successfully")
             ResponseEntity<Void>(HttpStatus.NO_CONTENT)
         }.orElseThrow {
             // Passing error code along with the message
+            publisher.publishMessage("Error while deleting user with id ${id}, so Redeliver it")
+            //publisher.publishMessage("User with id ${id} not found")
             UserNotFoundExceptionn(404, "User with id $id not found")
         }
     }
@@ -112,9 +121,12 @@ class UserController @Autowired constructor(val userRepository: UserRepository) 
         @RequestBody updatedUser: User
     ): ResponseEntity<User> {
         logger.info("Updating details of user having id${id}")
+        publisher.publishMessage("Updating details of user having id ${id}")
         val existingUser = userRepository.findById(id).orElseThrow {
             // Passing error code along with the message
+            publisher.publishMessage("User with id $id not found")
             UserNotFoundExceptionn(404, "User with id $id not found")
+
         }
 
         val newUser = existingUser.copy(
@@ -124,6 +136,7 @@ class UserController @Autowired constructor(val userRepository: UserRepository) 
             phoneNumber = updatedUser.phoneNumber
         )
         logger.info("details of user having id${id} is updated")
+        publisher.publishMessage("details of user having id${id} is updated")
         return ResponseEntity.ok(userRepository.save(newUser))
     }
     @GetMapping("/{name}/search")

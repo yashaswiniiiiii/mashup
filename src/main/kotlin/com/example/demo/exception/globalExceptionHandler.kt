@@ -1,5 +1,6 @@
 package com.example.demo.exception
 import com.example.demo.model.ErrorResponse
+import org.hibernate.TypeMismatchException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
@@ -23,21 +24,33 @@ class GlobalExceptionHandler {
     }
   @ExceptionHandler(MethodArgumentNotValidExceptionn :: class)
   fun handleMethodArgumentMismatch(ex: MethodArgumentNotValidExceptionn): ResponseEntity<ErrorResponse> {
-      logger.info("MethodargumentMismatch error occured")
-      val errorResponse = ErrorResponse(ex.errorCode, ex.message ?: "User not found")
+      logger.info("Methodargument Mismatch error occured")
+      val errorResponse = ErrorResponse(400,ex.message ?: "Inavlid Input")
       return ResponseEntity(errorResponse, HttpStatus.BAD_REQUEST)
   }
     @ExceptionHandler(BadRequestException::class)
     fun handleBadRequestException(ex: BadRequestException): ResponseEntity<ErrorResponse> {
         logger.info("BadRequest error occured")
-        val errorResponse = ErrorResponse(ex.errorCode,ex.message ?:"Input Mismatch")
+        val errorResponse = ErrorResponse(ex.errorCode,ex.message ?:"Bad Request")
         return ResponseEntity(errorResponse, HttpStatus.BAD_REQUEST)
     }
     @ExceptionHandler(HttpMessageNotReadableExceptionn::class)
     fun handlemethodArgumentNotValidException(ex: HttpMessageNotReadableExceptionn): ResponseEntity<ErrorResponse> {
         logger.info("BadRequest error occured")
-        val errorResponse = ErrorResponse(ex.errorCode,ex.message ?:"Input Mismatch")
+        val errorResponse = ErrorResponse(400,ex.message ?:"Input Mismatch")
         return ResponseEntity(errorResponse, HttpStatus.BAD_REQUEST)
+    }
+    @ExceptionHandler(conflictException::class)
+    fun handleConflictException(ex: conflictException): ResponseEntity<ErrorResponse>{
+        logger.info("conflict error occured")
+        val errorerponse= ErrorResponse(409, "An unexpected error occured")
+        return ResponseEntity(errorerponse, HttpStatus.CONFLICT);
+    }
+    @ExceptionHandler(TypeMismatchException::class)
+    fun handleTypeMismatchException(ex: TypeMismatchException): ResponseEntity<ErrorResponse>{
+        logger.info("TypeMismatch error occured")
+        val errorerponse= ErrorResponse(400, "An unexpected error occured")
+        return ResponseEntity(errorerponse, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception::class)
@@ -46,12 +59,6 @@ class GlobalExceptionHandler {
         val errorerponse= ErrorResponse(500, "An unexpected error occured")
         return ResponseEntity(errorerponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-  @ExceptionHandler(conflictException::class)
-  fun handleConflictException(ex: conflictException): ResponseEntity<ErrorResponse>{
-      logger.info("conflict error occured")
-      val errorerponse= ErrorResponse(409, "An unexpected error occured")
-      return ResponseEntity(errorerponse, HttpStatus.CONFLICT);
-  }
 
 
 }
