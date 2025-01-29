@@ -12,7 +12,7 @@ class Publisher(
     private lateinit var pulsarClient: PulsarClient
     private lateinit var producer: Producer<String>
 
-    // Initialize Pulsar client and producer
+
     init {
         try {
             pulsarClient = PulsarClient.builder()
@@ -27,7 +27,7 @@ class Publisher(
         }
     }
 
-    // Publish message (No retry logic at publisher side)
+
     fun publishMessage(messageContent: String) {
         val messageFuture: CompletableFuture<MessageId> = producer.sendAsync(messageContent)
 

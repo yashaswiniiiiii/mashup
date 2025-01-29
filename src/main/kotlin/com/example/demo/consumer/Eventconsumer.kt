@@ -1,6 +1,5 @@
 package com.example.demo.consumer
 
-import com.example.demo.Audit
 import com.example.demo.AuditLogRepo
 import com.example.demo.model.AuditLog
 import org.apache.pulsar.client.api.Message
