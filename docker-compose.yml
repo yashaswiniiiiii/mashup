@@ -2,62 +2,62 @@ version: '3.8'
 
 services:
   pulsar:
-      image: apachepulsar/pulsar:latest
-      ports:
-        - "6650:6650"
-        - "8080:8080"
-      healthcheck:
-        test: [ "CMD", "curl", "-f", "http://localhost:8080/admin" ]
-        interval: 30s
-        retries: 3
-        start_period: 30s
-        timeout: 10s
-      command: "bin/pulsar standalone"
+    image: apachepulsar/pulsar:latest
+    container_name: demo5-pulsar-1
+    ports:
+      - "6650:6650"
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/admin/v2"]
+      interval: 30s
+      retries: 3
+      start_period: 30s
+      timeout: 10s
+    command: "bin/pulsar standalone"
+    networks:
+      - app-network
 
-#  app:
-#    image: docker-spring-boot-postgres:latest
-#    container_name: app
-#    environment:
-#      - spring.datasource.url=jdbc:postgresql://localhost:5432/user
-##      - spring.datasource.url=jdbc:postgresql://db:5432/user
-#      - spring.datasource.username=postgres
-#      - spring.datasource.password=4321
-#      - SPRING_PULSAR_SERVICE_URL=pulsar://pulsar:6650
-#      - SERVER_PORT=8082
-#
-#    ports:
-#      - "8082:8082"
-#    depends_on:
-#      pulsar:
-#        condition: service_healthy
-#      db:
-#        condition: service_healthy
-#    networks:
-#      - app-network
-#    command: "java -jar /app/demo.jar"
-#
-#  # PostgreSQL Service
-#  db:
-#    image: postgres:13.1-alpine
-#    container_name: db
-#    environment:
-#      - POSTGRES_USER=postgres
-#      - POSTGRES_PASSWORD=4321
-#      - POSTGRES_DB=user
-#    volumes:
-#      - postgres_data:/var/lib/postgresql/data
-#      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
-#    networks:
-#      - app-network
-#    healthcheck:
-#      test: ["CMD-SHELL", "pg_isready -U postgres"]
-#      interval: 10s
-#      timeout: 5s
-#      retries: 5
-#
-#networks:
-#  app-network:
-#    driver: bridge
-#
-#volumes:
-#  postgres_data:
+  app:
+    image: docker-spring-boot-postgres:latest
+    container_name: app
+    environment:
+      - spring.datasource.url=jdbc:postgresql://db:5432/user
+      - spring.datasource.username=postgres
+      - spring.datasource.password=4321
+      - SPRING_PULSAR_SERVICE_URL=pulsar://demo5-pulsar-1:6650
+      - SERVER_PORT=8082
+    ports:
+      - "8082:8082"
+    depends_on:
+      pulsar:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    command: "java -jar /app/demo.jar"
+
+  db:
+    image: postgres:13.1-alpine
+    container_name: db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=4321
+      - POSTGRES_DB=user
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

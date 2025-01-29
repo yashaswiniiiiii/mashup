@@ -4,8 +4,8 @@ server:
 spring:
   pulsar:
     client:
-      service-url: pulsar://localhost:6650
-      #service-url: pulsar://pulsar:6650
+      #service-url: pulsar://localhost:6650
+      service-url: pulsar://demo5-pulsar-1:6650
     producer:
       topic-name: topic-name
     consumer:
